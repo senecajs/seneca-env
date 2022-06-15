@@ -8,12 +8,11 @@ const seneca = Seneca({legacy:false})
       .use('..', {
         debug: true,
 
-        // process: {
-        //   env: {
-        //     FOO: 'a',
-        //     ZED: 'b',
-        //   }
-        // },
+        process: {
+          env: {
+            YUK: JSON.stringify({ q: { w: [5,'$BAR',{value$:'$FOO'}] } })
+          }
+        },
 
         file: [
           __dirname+'/base.js', // this would be in git
@@ -28,7 +27,7 @@ const seneca = Seneca({legacy:false})
           BAR: 'red',
           ZED: Numeric(11.5),
           // QAZ: List('mercury, venus, earth'),
-          // YUK: Json()
+          YUK: Json({q:1})
         })})
       .ready(function() {
         console.log(this.context)
@@ -42,6 +41,21 @@ const seneca = Seneca({legacy:false})
           c: { d: 1, e: [2] },
           f: { g: '$BAR' },
           h: [[[3,'$ZED',4]]],
+          i: '$YUK'
         }),{depth: null})
+
+        // should print
+        /*
+{
+  a: 'x',
+  b: '$FOO',
+  c: { d: 1, e: [ 2 ] },
+  f: { g: 'y' },
+  h: [ [ [ 3, 33.3, 4 ] ] ],
+  i: { q: { w: [ 5, 'y', '$FOO' ] } }
+}
+         */
+
+        
       })
 

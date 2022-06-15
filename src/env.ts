@@ -246,7 +246,37 @@ const Intern: {
     },
 
     // TODO: List - parse string list like: red,green,blue
-    // TODO: Json - parse embedded JSON
+
+    Json: function(dval?: any) {
+      let node = buildize(this)
+
+      node.b.push((val: any, update: Update, state: State) => {
+
+        // use default if val is undefined
+        if (undefined === val) {
+          update.val = dval
+          return true
+        }
+
+        try {
+          let jval = JSON.parse(val)
+          update.val = jval
+          return true
+        }
+        catch (e: any) {
+          update.err = [
+            makeErr(state,
+              `Value "$VALUE" for property "$PATH" is ` +
+              `not valid JSON: ` + e.message)
+          ]
+
+          return false
+        }
+      })
+
+      return node
+    },
+
   }
 }
 

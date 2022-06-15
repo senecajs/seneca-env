@@ -170,7 +170,29 @@ const Intern = {
             return node;
         },
         // TODO: List - parse string list like: red,green,blue
-        // TODO: Json - parse embedded JSON
+        Json: function (dval) {
+            let node = (0, gubu_1.buildize)(this);
+            node.b.push((val, update, state) => {
+                // use default if val is undefined
+                if (undefined === val) {
+                    update.val = dval;
+                    return true;
+                }
+                try {
+                    let jval = JSON.parse(val);
+                    update.val = jval;
+                    return true;
+                }
+                catch (e) {
+                    update.err = [
+                        (0, gubu_1.makeErr)(state, `Value "$VALUE" for property "$PATH" is ` +
+                            `not valid JSON: ` + e.message)
+                    ];
+                    return false;
+                }
+            });
+            return node;
+        },
     }
 };
 exports.Intern = Intern;
