@@ -1,6 +1,6 @@
 {
   "name": "@seneca/env",
-  "version": "0.4.0",
+  "version": "0.1.0",
   "main": "dist/env.js",
   "type": "commonjs",
   "types": "dist/env.d.ts",
@@ -31,7 +31,8 @@
   "files": [
     "dist",
     "src/**/*.ts",
-    "LICENSE"
+    "LICENSE",
+    "README.md"
   ],
   "engines": {
     "node": ">=12"
@@ -46,7 +47,6 @@
     "typescript": "^4.7.3"
   },
   "peerDependencies": {
-    "seneca": ">=3",
-    "seneca-promisify": ">=2"
+    "seneca": ">=3"
   }
 }

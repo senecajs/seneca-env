@@ -2,7 +2,7 @@
 
 > _Seneca Env_ is a plugin for [Seneca](http://senecajs.org)
 
-Handle incoming messages within other frameworks.
+Validate and provide environment variables safely.
 
 [![npm version](https://img.shields.io/npm/v/@seneca/env.svg)](https://npmjs.com/package/@seneca/env)
 [![build](https://github.com/senecajs/seneca-env/actions/workflows/build.yml/badge.svg)](https://github.com/senecajs/seneca-env/actions/workflows/build.yml)
