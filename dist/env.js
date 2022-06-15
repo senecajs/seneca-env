@@ -6,30 +6,79 @@ const gubu_1 = require("gubu");
 function env(options) {
     var _a;
     let seneca = this;
+    let varMap = {};
+    let hideMap = {};
+    const varShape = makeVarShape(options, hideMap);
     const processEnv = { ...(((_a = options.process) === null || _a === void 0 ? void 0 : _a.env) || {}), ...process.env };
-    const env = { var: {} };
-    handleVars(options, env.var);
+    handleFile(varMap, options.file);
+    handleVars(varMap, processEnv);
+    // TODO: Gubu really needs some customization of the error message
+    varMap = varShape(varMap);
+    const env = { var: varMap };
     seneca.root.context.env = env;
-    function handleVars(options, contextVarMap) {
+    if (options.debug) {
+        console.log('\n===ENV=START==');
+        console.dir(hide(env, hideMap), { depth: null, compact: false });
+        console.log('===ENV=END====\n');
+    }
+    function makeVarShape(options, hideMap) {
         let varSpec = options.var || {};
-        let varShape;
         if ('function' === typeof varSpec) {
-            varShape = (0, gubu_1.Gubu)(varSpec({ ...gubu_1.Gubu, ...Intern.customShapeBuilders }));
+            varSpec = varSpec({ ...gubu_1.Gubu, ...Intern.customShapeBuilders });
         }
-        else {
-            varShape = (0, gubu_1.Gubu)(varSpec);
+        varSpec = Object.keys(varSpec)
+            .reduce((a, k) => {
+            let n = k.startsWith('$') ? (hideMap[k.substring(1)] = k.substring(1)) : k;
+            a[n] = varSpec[k];
+            return a;
+        }, {});
+        return (0, gubu_1.Gubu)(varSpec);
+    }
+    function handleFile(contextVarMap, fileSpec) {
+        if (null != fileSpec) {
+            let filePaths = 'string' === typeof fileSpec ? [fileSpec] : fileSpec;
+            // override right to left, like Object.assign
+            for (let filePath of filePaths) {
+                let varMap;
+                // check if optional
+                if (filePath.endsWith(';?')) {
+                    try {
+                        varMap = require(filePath.substring(0, filePath.length - 2));
+                    }
+                    catch (e) {
+                        // only ignore if not found
+                        if ('MODULE_NOT_FOUND' !== e.code) {
+                            throw e;
+                        }
+                    }
+                }
+                else {
+                    varMap = require(filePath);
+                }
+                varMap = null == varMap ? {} : varMap;
+                varMap = 'object' === typeof varMap.default ? varMap.default : varMap;
+                Object.assign(contextVarMap, varMap || {});
+            }
         }
-        let rawVarMap = Object.keys(varShape.spec().v)
-            .reduce((a, n) => (a[n] = processEnv[n], a), {});
-        // TODO: Gubu really needs some customization of the error message
-        let varMap = varShape(rawVarMap);
+    }
+    function handleVars(contextVarMap, processEnv) {
+        let varMap = Object.keys(varShape.spec().v)
+            .reduce((a, n) => (null != processEnv[n] && (a[n] = processEnv[n]), a), {});
         Object.assign(contextVarMap, varMap);
+    }
+    function hide(env, hideMap) {
+        return {
+            var: Object.keys(env.var)
+                .reduce((a, k) => (!hideMap[k] && (a[k] = env.var[k]), a), {})
+        };
     }
 }
 // Default options.
 env.defaults = {
     // Specify needed environment variables
     var: (0, gubu_1.One)({}, Function),
+    // Defaults from a file or set of files
+    file: (0, gubu_1.Skip)((0, gubu_1.One)(String, [String])),
     // Provide preset environment variable values
     process: (0, gubu_1.Skip)({
         env: (0, gubu_1.Skip)({})
@@ -85,7 +134,9 @@ const Intern = {
                 }
             });
             return node;
-        }
+        },
+        // TODO: List - parse string list like: red,green,blue
+        // TODO: Json - parse embedded JSON
     }
 };
 exports.Intern = Intern;

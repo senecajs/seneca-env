@@ -2,6 +2,7 @@
 
 import {
   Gubu,
+  GubuShape,
   Builder,
   One,
   Skip,
@@ -15,8 +16,10 @@ import {
 type KV = Record<string, any>
 
 type EnvOptions = {
+  file?: string | string[]
   var?: KV | ((valid: any) => KV)
   process?: { env: KV }
+  debug: boolean
 }
 
 type ContextEnv = {
@@ -26,32 +29,93 @@ type ContextEnv = {
 function env(this: any, options: EnvOptions) {
   let seneca: any = this
 
-  const processEnv = { ...(options.process?.env || {}), ...process.env }
-  const env: ContextEnv = { var: {} }
+  let varMap: KV = {}
+  let hideMap: KV = {}
 
-  handleVars(options, env.var)
+  const varShape = makeVarShape(options, hideMap)
+
+  const processEnv = { ...(options.process?.env || {}), ...process.env }
+
+  handleFile(varMap, options.file)
+  handleVars(varMap, processEnv)
+
+  // TODO: Gubu really needs some customization of the error message
+  varMap = varShape(varMap)
+
+  const env: ContextEnv = { var: varMap }
 
   seneca.root.context.env = env
 
 
-  function handleVars(options: EnvOptions, contextVarMap: KV) {
+  if (options.debug) {
+    console.log('\n===ENV=START==')
+    console.dir(hide(env, hideMap), { depth: null, compact: false })
+    console.log('===ENV=END====\n')
+  }
+
+  function makeVarShape(options: EnvOptions, hideMap: KV) {
     let varSpec = options.var || {}
 
-    let varShape
     if ('function' === typeof varSpec) {
-      varShape = Gubu(varSpec({ ...Gubu, ...Intern.customShapeBuilders }))
-    }
-    else {
-      varShape = Gubu(varSpec)
+      varSpec = varSpec({ ...Gubu, ...Intern.customShapeBuilders })
     }
 
-    let rawVarMap = Object.keys(varShape.spec().v)
-      .reduce((a: any, n: string) => (a[n] = processEnv[n], a), {})
+    varSpec = Object.keys(varSpec)
+      .reduce((a: any, k: string) => {
+        let n = k.startsWith('$') ? (hideMap[k.substring(1)] = k.substring(1)) : k
+        a[n] = varSpec[k]
+        return a
+      }, {})
 
-    // TODO: Gubu really needs some customization of the error message
-    let varMap = varShape(rawVarMap)
+    return Gubu(varSpec)
+  }
+
+
+  function handleFile(contextVarMap: KV, fileSpec?: string | string[]) {
+    if (null != fileSpec) {
+      let filePaths: string[] = 'string' === typeof fileSpec ? [fileSpec] : fileSpec
+
+      // override right to left, like Object.assign
+      for (let filePath of filePaths) {
+        let varMap
+
+        // check if optional
+        if (filePath.endsWith(';?')) {
+          try {
+            varMap = require(filePath.substring(0, filePath.length - 2))
+          }
+          catch (e: any) {
+            // only ignore if not found
+            if ('MODULE_NOT_FOUND' !== e.code) {
+              throw e
+            }
+          }
+        }
+        else {
+          varMap = require(filePath)
+        }
+        varMap = null == varMap ? {} : varMap
+        varMap = 'object' === typeof varMap.default ? varMap.default : varMap
+        Object.assign(contextVarMap, varMap || {})
+      }
+    }
+  }
+
+
+  function handleVars(contextVarMap: KV, processEnv: KV) {
+    let varMap = Object.keys(varShape.spec().v)
+      .reduce((a: any, n: string) =>
+        (null != processEnv[n] && (a[n] = processEnv[n]), a), {})
 
     Object.assign(contextVarMap, varMap)
+  }
+
+
+  function hide(env: ContextEnv, hideMap: KV) {
+    return {
+      var: Object.keys(env.var)
+        .reduce((a: any, k: string) => (!hideMap[k] && (a[k] = env.var[k]), a), {})
+    }
   }
 }
 
@@ -62,6 +126,9 @@ env.defaults = {
   // Specify needed environment variables
   var: One({}, Function),
 
+  // Defaults from a file or set of files
+  file: Skip(One(String, [String])),
+
   // Provide preset environment variable values
   process: Skip({
     env: Skip({})
@@ -69,6 +136,7 @@ env.defaults = {
 
   debug: false
 }
+
 
 
 const Intern: {
@@ -134,7 +202,10 @@ const Intern: {
       })
 
       return node
-    }
+    },
+
+    // TODO: List - parse string list like: red,green,blue
+    // TODO: Json - parse embedded JSON
   }
 }
 
