@@ -8,7 +8,11 @@ declare type EnvOptions = {
     };
     debug: boolean;
 };
-declare function env(this: any, options: EnvOptions): void;
+declare function env(this: any, options: EnvOptions): {
+    exports: {
+        injectVars: (src: any) => any;
+    };
+};
 declare namespace env {
     var defaults: {
         var: import("gubu").Node & {

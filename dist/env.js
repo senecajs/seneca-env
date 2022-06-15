@@ -15,7 +15,8 @@ function env(options) {
     // TODO: Gubu really needs some customization of the error message
     varMap = varShape(varMap);
     const env = { var: varMap };
-    seneca.root.context.env = env;
+    // Add to root context, as well as this plugin's.
+    seneca.root.context.env = seneca.context.env = env;
     if (options.debug) {
         console.log('\n===ENV=START==');
         console.dir(hide(env, hideMap), { depth: null, compact: false });
@@ -72,6 +73,39 @@ function env(options) {
                 .reduce((a, k) => (!hideMap[k] && (a[k] = env.var[k]), a), {})
         };
     }
+    // Replaces deep string values of from '$FOO' with env var.
+    // Escape with { value$: ... }
+    // NOTE: mutates src
+    function injectVars(src) {
+        if (null == src)
+            return src;
+        if ('object' !== typeof src)
+            return resolveVar(src);
+        if (undefined !== src.value$) {
+            return src.value$;
+        }
+        for (let key in src) {
+            let val = src[key];
+            src[key] = 'object' === typeof val ? injectVars(val) : resolveVar(val);
+        }
+        return src;
+    }
+    function resolveVar(val) {
+        let varMap = seneca.context.env.var;
+        if ('string' === typeof val && '$' === val[0]) {
+            let rval = varMap[val.slice(1)];
+            if (undefined === rval) {
+                throw new Error(`@seneca/env: Enviroment variable ${val} not loaded.`);
+            }
+            return 'object' === typeof rval ? injectVars(rval) : rval;
+        }
+        return val;
+    }
+    return {
+        exports: {
+            injectVars
+        }
+    };
 }
 // Default options.
 env.defaults = {

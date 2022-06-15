@@ -44,7 +44,8 @@ function env(this: any, options: EnvOptions) {
 
   const env: ContextEnv = { var: varMap }
 
-  seneca.root.context.env = env
+  // Add to root context, as well as this plugin's.
+  seneca.root.context.env = seneca.context.env = env
 
 
   if (options.debug) {
@@ -115,6 +116,46 @@ function env(this: any, options: EnvOptions) {
     return {
       var: Object.keys(env.var)
         .reduce((a: any, k: string) => (!hideMap[k] && (a[k] = env.var[k]), a), {})
+    }
+  }
+
+
+  // Replaces deep string values of from '$FOO' with env var.
+  // Escape with { value$: ... }
+  // NOTE: mutates src
+  function injectVars(src: any) {
+    if (null == src) return src;
+    if ('object' !== typeof src) return resolveVar(src);
+    if (undefined !== src.value$) {
+      return src.value$
+    }
+
+    for (let key in src) {
+      let val = src[key]
+      src[key] = 'object' === typeof val ? injectVars(val) : resolveVar(val)
+    }
+
+    return src
+  }
+
+
+  function resolveVar(val: any): any {
+    let varMap = seneca.context.env.var
+    if ('string' === typeof val && '$' === val[0]) {
+      let rval = varMap[val.slice(1)]
+      if (undefined === rval) {
+        throw new Error(`@seneca/env: Enviroment variable ${val} not loaded.`)
+      }
+      return 'object' === typeof rval ? injectVars(rval) : rval
+
+    }
+    return val
+  }
+
+
+  return {
+    exports: {
+      injectVars
     }
   }
 }

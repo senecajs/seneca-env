@@ -32,5 +32,16 @@ const seneca = Seneca({legacy:false})
         })})
       .ready(function() {
         console.log(this.context)
+
+        let injectVars = this.export('env/injectVars')
+        
+        console.log('CONF')
+        console.dir(injectVars({
+          a: '$FOO',
+          b: { value$: '$FOO' },
+          c: { d: 1, e: [2] },
+          f: { g: '$BAR' },
+          h: [[[3,'$ZED',4]]],
+        }),{depth: null})
       })
 
