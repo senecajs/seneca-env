@@ -32,6 +32,9 @@ const seneca = Seneca({legacy:false})
       .ready(function() {
         console.log(this.context)
 
+        console.log(this.context.env.var.FOO)
+
+        
         let injectVars = this.export('env/injectVars')
         
         console.log('CONF')
