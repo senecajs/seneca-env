@@ -16,7 +16,7 @@ function env(options) {
     varMap = varShape(varMap);
     const env = { var: varMap };
     // Add to root context, as well as this plugin's.
-    seneca.root.context.env = seneca.context.env = env;
+    seneca.root.context.SenecaEnv = seneca.context.SenecaEnv = env;
     if (options.debug) {
         console.log('\n===ENV=START==');
         console.dir(hide(env, hideMap), { depth: null, compact: false });
@@ -91,7 +91,7 @@ function env(options) {
         return src;
     }
     function resolveVar(val) {
-        let varMap = seneca.context.env.var;
+        let varMap = seneca.context.SenecaEnv.var;
         if ('string' === typeof val && '$' === val[0]) {
             let rval = varMap[val.slice(1)];
             if (undefined === rval) {

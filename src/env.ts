@@ -45,7 +45,7 @@ function env(this: any, options: EnvOptions) {
   const env: ContextEnv = { var: varMap }
 
   // Add to root context, as well as this plugin's.
-  seneca.root.context.env = seneca.context.env = env
+  seneca.root.context.SenecaEnv = seneca.context.SenecaEnv = env
 
 
   if (options.debug) {
@@ -64,7 +64,7 @@ function env(this: any, options: EnvOptions) {
     varSpec = Object.keys(varSpec)
       .reduce((a: any, k: string) => {
         let n = k.startsWith('$') ? (hideMap[k.substring(1)] = k.substring(1)) : k
-        a[n] = varSpec[k]
+        a[n] = (varSpec as any)[k]
         return a
       }, {})
 
@@ -140,7 +140,7 @@ function env(this: any, options: EnvOptions) {
 
 
   function resolveVar(val: any): any {
-    let varMap = seneca.context.env.var
+    let varMap = seneca.context.SenecaEnv.var
     if ('string' === typeof val && '$' === val[0]) {
       let rval = varMap[val.slice(1)]
       if (undefined === rval) {
@@ -181,7 +181,7 @@ env.defaults = {
 
 
 const Intern: {
-  customShapeBuilders: Record<string, Builder>
+  customShapeBuilders: Record<string, any>
 } = {
   customShapeBuilders: {
 
