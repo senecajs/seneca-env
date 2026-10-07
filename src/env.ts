@@ -146,7 +146,7 @@ function env(this: any, options: EnvOptions) {
     if ('string' === typeof val && '$' === val[0]) {
       let rval = varMap[val.slice(1)]
       if (undefined === rval) {
-        throw new Error(`@seneca/env: Enviroment variable ${val} not loaded.`)
+        throw new Error(`@seneca/env: Environment variable ${val} not loaded.`)
       }
       return 'object' === typeof rval ? injectVars(rval) : rval
     }
@@ -233,7 +233,7 @@ const Intern: {
                 `Value "$VALUE" for property "$PATH" is ` +
                 `not defined; should be numeric (base ${base}).`)
             ]
-
+            return false
           }
         }
 
