@@ -292,6 +292,12 @@ describe('env validation', () => {
 
     expect(() => define({ file: __dirname + '/missing.js', var: {} }))
       .toThrow(/Cannot find module/)
+
+    // An optional file that does not exist is ignored, but an optional file
+    // that exists and requires a missing module is a real failure.
+    expect(define({ file: __dirname + '/missing.js;?', var: {} })).toEqual({})
+    expect(() => define({ file: __dirname + '/broken.js;?', var: {} }))
+      .toThrow(/Cannot find module 'seneca-env-test-missing-module'/)
   })
 
 })

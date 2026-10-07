@@ -43,12 +43,15 @@ function env(options) {
                 let varMap;
                 // check if optional
                 if (filePath.endsWith(';?')) {
+                    const optionalPath = filePath.substring(0, filePath.length - 2);
                     try {
-                        varMap = require(filePath.substring(0, filePath.length - 2));
+                        varMap = require(optionalPath);
                     }
                     catch (e) {
-                        // only ignore if not found
-                        if ('MODULE_NOT_FOUND' !== e.code) {
+                        // Only ignore the optional file itself being missing. A module
+                        // that the file requires but that cannot be found also has the
+                        // code MODULE_NOT_FOUND; that is a real failure and is thrown.
+                        if (!Intern.isMissingModule(e, optionalPath)) {
                             throw e;
                         }
                     }
@@ -127,6 +130,16 @@ env.defaults = {
     debug: false
 };
 const Intern = {
+    isMissingModule: (err, modulePath) => {
+        if (null == err || 'MODULE_NOT_FOUND' !== err.code) {
+            return false;
+        }
+        // Node names the module that could not be found in the message:
+        // "Cannot find module '<path>'". A missing dependency of the file
+        // names that dependency instead.
+        const message = String(err.message || '');
+        return message.includes("'" + modulePath + "'");
+    },
     customShapeBuilders: {
         // TODO: could be moved to Gubu as a standard shape builder
         Numeric: function (dval, base = 10) {

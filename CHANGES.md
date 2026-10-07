@@ -2,6 +2,10 @@
 
 ## 0.6.0 2026-10-07
 
+* An optional configuration file (path ending in `;?`) is ignored only when
+  the file itself is missing. A module that the file requires but that
+  cannot be found used to be swallowed as well (same `MODULE_NOT_FOUND`
+  code); it now fails the load, as the documentation says.
 * Seneca 4 prerelease support: the tests run against `seneca@4.0.0-rc5`
   (now a development dependency, `^4.0.0-rc5`) and against the 4.0.0
   development build. The peer dependency range `>=3||>=4.0.0-rc2` is

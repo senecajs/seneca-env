@@ -62,8 +62,10 @@ object (such as a compiled ES module) is unwrapped. Files are applied in
 order with `Object.assign`, so later files override earlier ones.
 
 A path ending in `;?` is optional: a file that does not exist is
-ignored. Any other failure (a missing file without the suffix, a syntax
-error) fails the load.
+ignored. Any other failure fails the load: a missing file without the
+suffix, a syntax error, or a module that the file itself requires but
+that cannot be found (Node reports that with the same `MODULE_NOT_FOUND`
+code; only an error naming the optional file is ignored).
 
 Paths are resolved by `require` from the plugin's module, not from your
 file, so pass absolute paths (for example `__dirname + '/config.js'`).
