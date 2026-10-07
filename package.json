@@ -33,7 +33,8 @@
     "dist",
     "src/**/*.ts",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "docs"
   ],
   "engines": {
     "node": ">=18"
