@@ -23,6 +23,7 @@ declare namespace env {
     };
 }
 declare const Intern: {
+    isMissingModule: (err: any, modulePath: string) => boolean;
     customShapeBuilders: Record<string, any>;
 };
 export { Intern };

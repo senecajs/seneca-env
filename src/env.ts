@@ -84,12 +84,15 @@ function env(this: any, options: EnvOptions) {
 
         // check if optional
         if (filePath.endsWith(';?')) {
+          const optionalPath = filePath.substring(0, filePath.length - 2)
           try {
-            varMap = require(filePath.substring(0, filePath.length - 2))
+            varMap = require(optionalPath)
           }
           catch (e: any) {
-            // only ignore if not found
-            if ('MODULE_NOT_FOUND' !== e.code) {
+            // Only ignore the optional file itself being missing. A module
+            // that the file requires but that cannot be found also has the
+            // code MODULE_NOT_FOUND; that is a real failure and is thrown.
+            if (!Intern.isMissingModule(e, optionalPath)) {
               throw e
             }
           }
@@ -146,7 +149,7 @@ function env(this: any, options: EnvOptions) {
     if ('string' === typeof val && '$' === val[0]) {
       let rval = varMap[val.slice(1)]
       if (undefined === rval) {
-        throw new Error(`@seneca/env: Enviroment variable ${val} not loaded.`)
+        throw new Error(`@seneca/env: Environment variable ${val} not loaded.`)
       }
       return 'object' === typeof rval ? injectVars(rval) : rval
     }
@@ -192,8 +195,21 @@ env.defaults = {
 
 
 const Intern: {
+  isMissingModule: (err: any, modulePath: string) => boolean
+
   customShapeBuilders: Record<string, any>
 } = {
+  isMissingModule: (err: any, modulePath: string): boolean => {
+    if (null == err || 'MODULE_NOT_FOUND' !== err.code) {
+      return false
+    }
+    // Node names the module that could not be found in the message:
+    // "Cannot find module '<path>'". A missing dependency of the file
+    // names that dependency instead.
+    const message: string = String(err.message || '')
+    return message.includes("'" + modulePath + "'")
+  },
+
   customShapeBuilders: {
 
     // TODO: could be moved to Gubu as a standard shape builder
@@ -233,7 +249,7 @@ const Intern: {
                 `Value "$VALUE" for property "$PATH" is ` +
                 `not defined; should be numeric (base ${base}).`)
             ]
-
+            return false
           }
         }
 
