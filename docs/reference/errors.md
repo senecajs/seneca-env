@@ -1,20 +1,27 @@
 # Errors
 
 The plugin defines no error codes of its own. It throws plain errors
-(`Error`, or `GubuError` from validation) while it loads, and Seneca
+while it loads (`Error`, or from validation a `ShapeError` on Seneca
+4.0.0 and a `GubuError` on Seneca 3.38 and 4.0.0-rc5), and Seneca
 treats a throw during plugin loading as fatal. This page lists every
 message and what Seneca does with it. `NAME` stands for the variable
 name and `VALUE` for the offending value.
 
 ## Validation errors
 
-Thrown while the collected values are checked against the `var` shape.
-The messages come from Gubu. When several variables fail, the messages
-are joined, one per line.
+Thrown while the collected values are checked against the `var` shape,
+by the validator of the Seneca instance. On Seneca 4.0.0 the error is a
+`ShapeError` (`name: 'ShapeError'`, `shape: true`, `code: 'shape'`); on
+Seneca 3.38 and 4.0.0-rc5 it is a `GubuError` (`name: 'GubuError'`,
+`gubu: true` instead of `shape: true`, `code: 'shape'`). Both have
+`props`, one entry per failure with its `path`, and `desc()`, which
+returns the full details. The messages are the same in shape and Gubu,
+except for a missing required value. When several variables fail, the
+messages are joined, one per line.
 
 | Situation | Message |
 | --------- | ------- |
-| A required variable (`String`, `Required(...)`) has no value | `Validation failed for property "NAME" with value "undefined" because the value is required.` |
+| A required variable (`String`, `Required(...)`) has no value | Seneca 4.0.0 (shape): `Validation failed for property "NAME" because the property is missing.` Seneca 3.38 and 4.0.0-rc5 (Gubu): `Validation failed for property "NAME" with value "undefined" because the value is required.` |
 | A `Numeric` value does not parse | `Value "VALUE" for property "NAME" is not numeric (base 10).` (the base is the one declared) |
 | A required `Numeric` has no value | `Value "undefined" for property "NAME" is not defined; should be numeric (base 10).` |
 | A `Json` value does not parse | `Value "VALUE" for property "NAME" is not valid JSON: ` followed by the `JSON.parse` message |
@@ -32,17 +39,40 @@ are joined, one per line.
 ## Option errors
 
 The plugin options themselves are validated by Seneca against the
-plugin's `defaults` shape. A wrong type or an unknown option name is a
-fatal plugin load error (`invalid_plugin_option`) with a Gubu message,
-for example:
+plugin's `defaults` shape, which `env.defaults` builds with Seneca's own
+builders (shape on Seneca 4.0.0, Gubu on Seneca 3.38 and 4.0.0-rc5). A
+wrong type or an unknown option name is a fatal plugin load error
+(`invalid_plugin_option`). On Seneca 4.0.0 the message is
+`seneca: Plugin env: option value is not valid: REASON.`, where the
+reason names the property but not its value, for example:
 
-| Options | Message |
-| ------- | ------- |
-| `{ debug: 'yes' }` | `Validation failed for property "debug" with string "yes" because the string is not of type boolean.` |
-| `{ file: 123 }` | `Value "123" for property "file" does not satisfy one of: String, ["String"]` |
-| `{ var: 'x' }` | `Value "x" for property "var" does not satisfy one of: {}, Function` |
-| `{ process: { env: 'x' } }` | `Validation failed for property "process.env" with string "x" because the string is not of type object.` |
-| `{ unknown: 1 }` | `Validation failed for object "{unknown:1}" because the property "unknown" is not allowed.` |
+| Options | `REASON` (Seneca 4.0.0) |
+| ------- | ----------------------- |
+| `{ debug: 'yes' }` | `property "debug" is not of type boolean` |
+| `{ file: 123 }` | `property "file" does not satisfy one of: String, ["String"]` |
+| `{ var: 'x' }` | `property "var" does not satisfy one of: {}, Function` |
+| `{ process: { env: 'x' } }` | `property "process.env" is not of type object` |
+| `{ unknown: 1 }` | `the object does not allow the property "unknown"` |
+
+Seneca 3.38 and 4.0.0-rc5 leave the reason out of the message and show
+the options instead, for example
+`seneca: Plugin env: option value is not valid:  in options {debug:yes,var:{},file:[],init$:true}`
+(Seneca 3.38).
+
+The plugin itself refuses a `var` object that contains builder nodes of
+the other library, because the validator does not read them (see
+[Options: var](options.md#var)). On Seneca 4.0.0, `{ PORT: Default(8080) }`
+with `Default` imported from the `gubu` package fails with:
+
+```
+Error: @seneca/env: the var option is built with Gubu builders (at PORT), but this Seneca validates with shape, which does not read them. Use the builders passed to a var function, or seneca.valid.
+```
+
+On Seneca 3.38 and 4.0.0-rc5 shape builders are refused in the same
+way (`built with shape builders (at PORT), but this Seneca validates
+with Gubu`). The path in parentheses names the first variable with such
+a node. The error is thrown by the definition function, so Seneca
+reports it as `plugin_define_failed`.
 
 ## Hook errors
 
@@ -73,7 +103,10 @@ definition error as `plugin_define_failed` (message:
 with the original error in `details`), calls the error handler given to
 `seneca.test(fn)` if there is one, closes the instance and calls
 `system.exit`. In Seneca 3 and Seneca 4.0.0 that exits the process with
-code 1 (code 2 when closing times out); in Seneca 4.0.0-rc5 the default
-`system.exit` only logs the exit. Because of this, the plugin's own
-tests check the messages by calling the definition function directly;
-see [Test a misconfiguration](../how-to/test-code-that-uses-env.md#test-a-misconfiguration).
+code 1 (code 2 when closing times out). After a failed definition,
+closing does not finish within the `death_delay` option (11 seconds by
+default), so in Seneca 3.38 and 4.0.0 the process exits with code 2
+after that delay. In Seneca 4.0.0-rc5 the default `system.exit` only
+logs the exit. Because of this, the plugin's own tests check the
+messages by calling the definition function directly; see
+[Test a misconfiguration](../how-to/test-code-that-uses-env.md#test-a-misconfiguration).

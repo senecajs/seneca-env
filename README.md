@@ -15,8 +15,8 @@ files. You declare the variables once, with their types and defaults;
 the plugin reads them from defaults files and from `process.env`,
 validates and converts them at startup, and makes them available to
 every plugin on the instance as `seneca.context.SenecaEnv.var`. It works
-with Seneca 4 (tested with 4.0.0-rc5 and the 4.0.0 development build)
-and with Seneca 3 (with seneca-promisify).
+with Seneca 4 (tested with 4.0.0 and 4.0.0-rc5) and with Seneca 3.38
+or later (with seneca-promisify).
 
 | ![Voxgig](https://www.voxgig.com/res/img/vgt01r.png) | This open source module is sponsored and supported by [Voxgig](https://www.voxgig.com). |
 |---|---|
@@ -27,9 +27,11 @@ and with Seneca 3 (with seneca-promisify).
 npm install @seneca/env
 ```
 
-On Seneca 3 also install `seneca-promisify` and load it before this
-plugin. Node.js 22 or later is recommended (the package declares
-`node >= 18`).
+On Seneca 3 (3.38 or later) also install `seneca-promisify` and load it
+before this plugin. Node.js 22 or later is recommended (the package
+declares `node >= 18`); Seneca 4.0.0 itself requires Node.js 24 or
+later. The plugin has no runtime dependencies: it validates with the
+validator of the Seneca instance.
 
 ## Quick Example
 
@@ -71,9 +73,11 @@ of the instance with a message that names the variable.
 Configuration read straight from `process.env` is stringly typed,
 scattered across plugins and checked only when the code that needs it
 runs. This plugin moves it to one declaration per instance, validated
-with the same [Gubu](https://github.com/rjrodger/gubu) shapes Seneca
-uses for options, so that a misconfigured service fails at startup
-with a clear message. See [How the plugin works](docs/explanation/design.md).
+with the same validator Seneca uses for options
+([shape](https://github.com/rjrodger/shape) on Seneca 4,
+[Gubu](https://github.com/rjrodger/gubu) on Seneca 3), so that a
+misconfigured service fails at startup with a clear message. See
+[How the plugin works](docs/explanation/design.md).
 
 ## Support
 
@@ -133,12 +137,13 @@ GitHub scope the preparing session did not have.
 
 The plugin was created in 2022 by Richard Rodger to give Seneca
 services a single, validated view of their environment. Version 0.6.0
-adds Seneca 4 prerelease support and this documentation.
+adds Seneca 4 support (0.5.0 stops the process at startup on Seneca
+4.0.0) and this documentation.
 
 | Seneca | Node.js | Status |
 | ------ | ------- | ------ |
-| 4.0.0-rc5 and the 4.0.0 development build | 24, 22 | Tested on both; peer range `>=4.0.0-rc2`. |
-| 3.38 with seneca-promisify | 24 | Tested; peer range `>=3`. |
+| 4.0.0 and 4.0.0-rc5 | 24, 22 | Tested on both; peer range `>=4.0.0-rc5`. Seneca 4.0.0 requires Node.js 24 or later. |
+| 3.38 with seneca-promisify | 24 | Tested; peer range `>=3.38`. |
 
 Part of the [Senecajs org](https://github.com/senecajs/). Licensed
 under the [MIT license](LICENSE).

@@ -20,7 +20,7 @@ test('price', async () => {
   const seneca = Seneca({ legacy: false }).test()
     .use(Env, {
       process: { env: { SHOP_TEST_UNIT: '2.5' } },
-      var: ({ Numeric }) => ({ SHOP_TEST_UNIT: Numeric(1) }),
+      var: ({ Numeric }) => ({ SHOP_TEST_UNIT: Numeric(1.5) }),
     })
     .use(shop, { unit: '$SHOP_TEST_UNIT' })
 
@@ -76,7 +76,7 @@ test('messages', async () => {
   const seneca = Seneca({ legacy: false }).test()
     .use(Env, {
       process: { env: { SHOP_TEST_UNIT: '2.5' } },
-      var: ({ Numeric }) => ({ SHOP_TEST_UNIT: Numeric(1) }),
+      var: ({ Numeric }) => ({ SHOP_TEST_UNIT: Numeric(1.5) }),
     })
     .use(shop, { unit: '$SHOP_TEST_UNIT' })
 
@@ -92,31 +92,41 @@ own `test/env.test.ts` and `test/basic.messages.ts` use the same shape.
 ## Test a misconfiguration
 
 A plugin that fails to load is a fatal error in Seneca: the instance
-closes and, outside test mode, the process exits. To check the error
-messages for a missing or malformed variable, call the plugin
-definition directly on a minimal instance stub, as the plugin's own
-tests do:
+closes and the process exits, in test mode too (see
+[What Seneca does with them](../reference/errors.md#what-seneca-does-with-them)).
+To check the error messages for a missing or malformed variable, call
+the plugin definition directly on a minimal instance stub, as the
+plugin's own tests do:
 
 ```js
+const Seneca = require('seneca')
 const Env = require('@seneca/env')
 
+// The stub provides Seneca's validator, as an instance does.
 function define(options) {
-  const stub = { root: { context: {} }, context: {}, prepare() {} }
+  const stub = { root: { context: {} }, context: {}, prepare() {}, valid: Seneca.valid }
   Env.call(stub, { debug: false, ...options })
   return stub.context.SenecaEnv.var
 }
 
 test('missing variable', () => {
   expect(() => define({ var: { SHOP_TEST_NAME: String } }))
-    .toThrow('Validation failed for property "SHOP_TEST_NAME" with value "undefined" because the value is required.')
+    .toThrow('Validation failed for property "SHOP_TEST_NAME" because the property is missing.')
 })
 ```
 
-The messages are listed in [Errors](../reference/errors.md).
+The stub needs `valid`, because the plugin builds the `var` shape with
+the validator of the instance (`seneca.valid`); without it the call
+fails with `TypeError: Valid is not a function`. The expected message
+is the Seneca 4.0.0 (shape) one; on Seneca 3 and 4.0.0-rc5 (Gubu) it
+is `Validation failed for property "SHOP_TEST_NAME" with value
+"undefined" because the value is required.` The messages are listed in
+[Errors](../reference/errors.md).
 
 ## Seneca 3
 
-On Seneca 3 load `seneca-promisify` before the plugin
+On Seneca 3 (3.38 or later) load `seneca-promisify` before the plugin
 (`Seneca().test().use('promisify').use(Env)`), because the plugin uses
-`seneca.prepare` and `seneca.post`. On Seneca 4 the same line is
-harmless: seneca-promisify is a no-op there.
+`seneca.prepare` and `seneca.post`. On Seneca 4 the same line still
+works, as seneca-promisify is a no-op there, but Seneca 4.0.0 logs a
+deprecation warning for it (`SENECA_DEP_PROMISIFY`).

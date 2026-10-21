@@ -8,8 +8,11 @@ in [Messages](messages.md).
 ## Module
 
 `require('@seneca/env')` returns the plugin definition function, named
-`env`, with the property `env.defaults` (the options shape, see
-[Options](options.md)). Load it in any of the usual ways:
+`env`, with the property `env.defaults`: a function
+`({ valid }) => ({ ... })` that builds the options shape (see
+[Options](options.md)) with the builders Seneca passes in `valid`, shape
+on Seneca 4.0.0 and Gubu 9 on Seneca 3.38 and 4.0.0-rc5. Load the
+plugin in any of the usual ways:
 
 ```js
 seneca.use(require('@seneca/env'), options)
@@ -24,9 +27,10 @@ In TypeScript, `import Env from '@seneca/env'` gives the same function.
 The type declarations also name an `Intern` export; it is not provided
 by the compiled module at runtime.
 
-The module requires `gubu` (declared as a dependency) and needs
-`seneca.prepare` and `seneca.post`, which Seneca 4 provides and Seneca
-3 gets from `seneca-promisify`.
+The module has no runtime dependencies. It validates with the validator
+of the Seneca instance, `seneca.valid`, and needs `seneca.prepare` and
+`seneca.post`, which Seneca 4 provides and Seneca 3 gets from
+`seneca-promisify`. The peer dependency is `seneca >=3.38||>=4.0.0-rc5`.
 
 ## Context
 
@@ -69,10 +73,15 @@ the hook message are available too.
 ## Shape builders
 
 The function form of the `var` option receives an object with every
-[Gubu](https://github.com/rjrodger/gubu) builder (`Required`, `Skip`,
-`Optional`, `Exact`, `Default`, `One`, `Open`, `Closed`, `Min`, `Max`,
-`Len`, `Check` and the rest, plus `Gubu` itself) and these two builders
-supplied by the plugin:
+builder of the validator the Seneca instance uses,
+[shape](https://github.com/rjrodger/shape) on Seneca 4.0.0 and
+[Gubu](https://github.com/rjrodger/gubu) 9 on Seneca 3.38 and
+4.0.0-rc5. Every Gubu 9 builder (`Required`, `Skip`, `Optional`,
+`Exact`, `Default`, `One`, `Open`, `Closed`, `Min`, `Max`, `Len`,
+`Check` and the rest) also exists in shape, which adds some of its own
+(such as `Integer` and `Email`). The object also holds the validator
+itself, as `Shape` on Seneca 4.0.0 and as `Gubu` on Seneca 3.38 and
+4.0.0-rc5. The plugin adds these two builders:
 
 ### `Numeric(default, base)`
 
@@ -106,11 +115,15 @@ of `var`, unless the shape is wrapped in `Required`. A value that does
 not parse fails with `Value "{bad" for property "NAME" is not valid
 JSON: ` followed by the `JSON.parse` message.
 
-Both builders return Gubu nodes, so the Gubu methods can be chained
-(`Numeric('int').Required()`).
+Both builders are made from the validator of the instance, with its
+`buildize` and `makeErr` (shape and Gubu both provide them), and return
+nodes of that validator, so its methods can be chained
+(`Numeric('int').Required()`). Their behaviour and messages are the
+same on Seneca 3 and Seneca 4.
 
 ### Plain values
 
-Without a builder, Gubu's own rules apply: `String` is a required
-string, a string literal is a default, and a number or boolean literal
-is a typed default that an environment string cannot satisfy.
+Without a builder, the validator's own rules apply, which are the same
+in shape and Gubu: `String` is a required string, a string literal is a
+default, and a number or boolean literal is a typed default that an
+environment string cannot satisfy.
