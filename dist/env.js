@@ -35,6 +35,17 @@ function env(options) {
             a[n] = varSpec[k];
             return a;
         }, {});
+        // Builder nodes of the other library (Gubu nodes for shape, shape nodes
+        // for Gubu) are not read by the validator, so they are refused.
+        const isShapeLib = null != Valid({}).shape;
+        const at = Intern.findForeignNode(varSpec, isShapeLib ? 'gubu$' : 'shape$');
+        if (null != at) {
+            throw new Error(`@seneca/env: the var option is built with ` +
+                `${isShapeLib ? 'Gubu' : 'shape'} builders (at ${at}), but this ` +
+                `Seneca validates with ${isShapeLib ? 'shape' : 'Gubu'}, which does ` +
+                `not read them. Use the builders passed to a var function, or ` +
+                `seneca.valid.`);
+        }
         return Valid(varSpec);
     }
     function handleFile(contextVarMap, fileSpec) {
@@ -142,6 +153,25 @@ const Intern = {
         // names that dependency instead.
         const message = String(err.message || '');
         return message.includes("'" + modulePath + "'");
+    },
+    // Builder nodes carry a marker in `$`: `shape$` or `gubu$`. Returns the
+    // path of the first node with the given marker, or null.
+    findForeignNode: (spec, marker, path = '', seen = new Set()) => {
+        if (null == spec || 'object' !== typeof spec || seen.has(spec)) {
+            return null;
+        }
+        seen.add(spec);
+        if (null != spec.$ && 'object' === typeof spec.$ &&
+            Object.prototype.hasOwnProperty.call(spec.$, marker)) {
+            return path || '(root)';
+        }
+        for (const key of Object.keys(spec)) {
+            const found = Intern.findForeignNode(spec[key], marker, path ? path + '.' + key : key, seen);
+            if (null != found) {
+                return found;
+            }
+        }
+        return null;
     },
     // The builders are made from the validator they are used with (shape or
     // Gubu), as builder nodes of one are not read by the other.

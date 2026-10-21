@@ -24,6 +24,7 @@ declare namespace env {
 }
 declare const Intern: {
     isMissingModule: (err: any, modulePath: string) => boolean;
+    findForeignNode: (spec: any, marker: string, path?: string, seen?: Set<any>) => string | null;
     makeCustomShapeBuilders: (valid: any) => Record<string, any>;
 };
 export { Intern };

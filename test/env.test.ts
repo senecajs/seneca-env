@@ -290,6 +290,13 @@ describe('env validation', () => {
       var: { SENECA_ENV_TEST_P: 3000 },
     })).toThrow('because the string is not of type number')
 
+    // Builder nodes of the other library (Gubu for shape, shape for Gubu)
+    // are refused: the validator does not read them.
+    const marker = null != Seneca.valid({}).shape ? 'gubu$' : 'shape$'
+    const node = { $: { [marker]: Symbol(marker), v$: '0.0.0' }, t: 'number' }
+    expect(() => define({ var: { SENECA_ENV_TEST_F: node } }))
+      .toThrow(/^@seneca\/env: the var option is built with (Gubu|shape) builders \(at SENECA_ENV_TEST_F\)/)
+
     // An empty var shape accepts anything; a declared shape rejects unknown names.
     expect(define({ file: __dirname + '/base.js', var: {} })).toEqual({ FOO: 'base' })
     expect(() => define({ file: __dirname + '/base.js', var: { BAR: 'x' } }))
