@@ -2,17 +2,19 @@
 /* Copyright © 2022 Richard Rodger, MIT License. */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Intern = void 0;
-const gubu_1 = require("gubu");
 function env(options) {
     var _a;
     let seneca = this;
+    // The validator of the Seneca instance: shape on Seneca 4, Gubu on
+    // Seneca 3.
+    const Valid = seneca.valid;
     let varMap = {};
     let hideMap = {};
     const varShape = makeVarShape(options, hideMap);
     const processEnv = { ...(((_a = options.process) === null || _a === void 0 ? void 0 : _a.env) || {}), ...process.env };
     handleFile(varMap, options.file);
     handleVars(varMap, processEnv);
-    // TODO: Gubu really needs some customization of the error message
+    // TODO: the validator really needs some customization of the error message
     varMap = varShape(varMap);
     const env = { var: varMap };
     // Add to root context, as well as this plugin's.
@@ -25,7 +27,7 @@ function env(options) {
     function makeVarShape(options, hideMap) {
         let varSpec = options.var || {};
         if ('function' === typeof varSpec) {
-            varSpec = varSpec({ ...gubu_1.Gubu, ...Intern.customShapeBuilders });
+            varSpec = varSpec({ ...Valid, ...Intern.makeCustomShapeBuilders(Valid) });
         }
         varSpec = Object.keys(varSpec)
             .reduce((a, k) => {
@@ -33,7 +35,7 @@ function env(options) {
             a[n] = varSpec[k];
             return a;
         }, {});
-        return (0, gubu_1.Gubu)(varSpec);
+        return Valid(varSpec);
     }
     function handleFile(contextVarMap, fileSpec) {
         if (null != fileSpec) {
@@ -117,18 +119,19 @@ function env(options) {
         }
     };
 }
-// Default options.
-env.defaults = {
+// Default options, built with the builders Seneca passes in `valid`:
+// shape on Seneca 4, Gubu on Seneca 3. Seneca 4 rejects Gubu shapes.
+env.defaults = ({ valid }) => ({
     // Specify needed environment variables
-    var: (0, gubu_1.One)({}, Function),
+    var: valid.One({}, Function),
     // Defaults from a file or set of files
-    file: (0, gubu_1.Skip)((0, gubu_1.One)(String, [String])),
+    file: valid.Skip(valid.One(String, [String])),
     // Provide preset environment variable values
-    process: (0, gubu_1.Skip)({
-        env: (0, gubu_1.Skip)({})
+    process: valid.Skip({
+        env: valid.Skip({})
     }),
     debug: false
-};
+});
 const Intern = {
     isMissingModule: (err, modulePath) => {
         if (null == err || 'MODULE_NOT_FOUND' !== err.code) {
@@ -140,10 +143,12 @@ const Intern = {
         const message = String(err.message || '');
         return message.includes("'" + modulePath + "'");
     },
-    customShapeBuilders: {
-        // TODO: could be moved to Gubu as a standard shape builder
+    // The builders are made from the validator they are used with (shape or
+    // Gubu), as builder nodes of one are not read by the other.
+    makeCustomShapeBuilders: (valid) => ({
+        // TODO: could be moved to shape as a standard shape builder
         Numeric: function (dval, base = 10) {
-            let node = (0, gubu_1.buildize)(this);
+            let node = valid.buildize(this);
             let sval = ('' + dval).toLowerCase();
             let parseNumeric = parseInt;
             // specify integer without default
@@ -169,7 +174,7 @@ const Intern = {
                     }
                     else {
                         update.err = [
-                            (0, gubu_1.makeErr)(state, `Value "$VALUE" for property "$PATH" is ` +
+                            valid.makeErr(state, `Value "$VALUE" for property "$PATH" is ` +
                                 `not defined; should be numeric (base ${base}).`)
                         ];
                         return false;
@@ -178,7 +183,7 @@ const Intern = {
                 let nval = parseNumeric(val, base);
                 if (isNaN(nval)) {
                     update.err = [
-                        (0, gubu_1.makeErr)(state, `Value "$VALUE" for property "$PATH" is ` +
+                        valid.makeErr(state, `Value "$VALUE" for property "$PATH" is ` +
                             `not numeric (base ${base}).`)
                     ];
                     return false;
@@ -192,7 +197,7 @@ const Intern = {
         },
         // TODO: List - parse string list like: red,green,blue
         Json: function (dval) {
-            let node = (0, gubu_1.buildize)(this);
+            let node = valid.buildize(this);
             node.b.push((val, update, state) => {
                 // use default if val is undefined
                 if (undefined === val) {
@@ -206,7 +211,7 @@ const Intern = {
                 }
                 catch (e) {
                     update.err = [
-                        (0, gubu_1.makeErr)(state, `Value "$VALUE" for property "$PATH" is ` +
+                        valid.makeErr(state, `Value "$VALUE" for property "$PATH" is ` +
                             `not valid JSON: ` + e.message)
                     ];
                     return false;
@@ -214,7 +219,7 @@ const Intern = {
             });
             return node;
         },
-    }
+    })
 };
 exports.Intern = Intern;
 exports.default = env;

@@ -1,18 +1,5 @@
 /* Copyright © 2022 Richard Rodger, MIT License. */
 
-import {
-  Gubu,
-  GubuShape,
-  Builder,
-  One,
-  Skip,
-  buildize,
-  Update,
-  State,
-  makeErr
-} from 'gubu'
-
-
 type KV = Record<string, any>
 
 type EnvOptions = {
@@ -30,6 +17,10 @@ type ContextEnv = {
 function env(this: any, options: EnvOptions) {
   let seneca: any = this
 
+  // The validator of the Seneca instance: shape on Seneca 4, Gubu on
+  // Seneca 3.
+  const Valid = seneca.valid
+
   let varMap: KV = {}
   let hideMap: KV = {}
 
@@ -41,7 +32,7 @@ function env(this: any, options: EnvOptions) {
   handleVars(varMap, processEnv)
 
 
-  // TODO: Gubu really needs some customization of the error message
+  // TODO: the validator really needs some customization of the error message
   varMap = varShape(varMap)
 
   const env: ContextEnv = { var: varMap }
@@ -60,7 +51,7 @@ function env(this: any, options: EnvOptions) {
     let varSpec = options.var || {}
 
     if ('function' === typeof varSpec) {
-      varSpec = varSpec({ ...Gubu, ...Intern.customShapeBuilders })
+      varSpec = varSpec({ ...Valid, ...Intern.makeCustomShapeBuilders(Valid) })
     }
 
     varSpec = Object.keys(varSpec)
@@ -70,7 +61,7 @@ function env(this: any, options: EnvOptions) {
         return a
       }, {})
 
-    return Gubu(varSpec)
+    return Valid(varSpec)
   }
 
 
@@ -175,29 +166,30 @@ function env(this: any, options: EnvOptions) {
 }
 
 
-// Default options.
-env.defaults = {
+// Default options, built with the builders Seneca passes in `valid`:
+// shape on Seneca 4, Gubu on Seneca 3. Seneca 4 rejects Gubu shapes.
+env.defaults = ({ valid }: { valid: any }) => ({
 
   // Specify needed environment variables
-  var: One({}, Function),
+  var: valid.One({}, Function),
 
   // Defaults from a file or set of files
-  file: Skip(One(String, [String])),
+  file: valid.Skip(valid.One(String, [String])),
 
   // Provide preset environment variable values
-  process: Skip({
-    env: Skip({})
+  process: valid.Skip({
+    env: valid.Skip({})
   }),
 
   debug: false
-}
+})
 
 
 
 const Intern: {
   isMissingModule: (err: any, modulePath: string) => boolean
 
-  customShapeBuilders: Record<string, any>
+  makeCustomShapeBuilders: (valid: any) => Record<string, any>
 } = {
   isMissingModule: (err: any, modulePath: string): boolean => {
     if (null == err || 'MODULE_NOT_FOUND' !== err.code) {
@@ -210,11 +202,13 @@ const Intern: {
     return message.includes("'" + modulePath + "'")
   },
 
-  customShapeBuilders: {
+  // The builders are made from the validator they are used with (shape or
+  // Gubu), as builder nodes of one are not read by the other.
+  makeCustomShapeBuilders: (valid: any) => ({
 
-    // TODO: could be moved to Gubu as a standard shape builder
+    // TODO: could be moved to shape as a standard shape builder
     Numeric: function(dval?: number | string | undefined, base: number = 10) {
-      let node = buildize(this)
+      let node = valid.buildize(this)
       let sval = ('' + dval).toLowerCase()
       let parseNumeric = parseInt
 
@@ -235,7 +229,7 @@ const Intern: {
         parseNumeric = parseFloat
       }
 
-      node.b.push((val: any, update: Update, state: State) => {
+      node.b.push((val: any, update: any, state: any) => {
 
         // use default if val is undefined
         if (undefined === val) {
@@ -245,7 +239,7 @@ const Intern: {
           }
           else {
             update.err = [
-              makeErr(state,
+              valid.makeErr(state,
                 `Value "$VALUE" for property "$PATH" is ` +
                 `not defined; should be numeric (base ${base}).`)
             ]
@@ -256,7 +250,7 @@ const Intern: {
         let nval = parseNumeric(val, base)
         if (isNaN(nval)) {
           update.err = [
-            makeErr(state,
+            valid.makeErr(state,
               `Value "$VALUE" for property "$PATH" is ` +
               `not numeric (base ${base}).`)
           ]
@@ -275,9 +269,9 @@ const Intern: {
     // TODO: List - parse string list like: red,green,blue
 
     Json: function(dval?: any) {
-      let node = buildize(this)
+      let node = valid.buildize(this)
 
-      node.b.push((val: any, update: Update, state: State) => {
+      node.b.push((val: any, update: any, state: any) => {
 
         // use default if val is undefined
         if (undefined === val) {
@@ -292,7 +286,7 @@ const Intern: {
         }
         catch (e: any) {
           update.err = [
-            makeErr(state,
+            valid.makeErr(state,
               `Value "$VALUE" for property "$PATH" is ` +
               `not valid JSON: ` + e.message)
           ]
@@ -304,7 +298,7 @@ const Intern: {
       return node
     },
 
-  }
+  })
 }
 
 export {
