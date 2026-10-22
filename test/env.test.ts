@@ -225,8 +225,11 @@ describe('env validation', () => {
 
   // A failing plugin definition is a fatal error in Seneca, which closes the
   // instance, so the definition function is called directly on a stub here.
+  // The stub provides Seneca's validator, as an instance does.
   function define(options: any) {
-    const stub: any = { root: { context: {} }, context: {}, prepare() { } }
+    const stub: any = {
+      root: { context: {} }, context: {}, prepare() { }, valid: Seneca.valid,
+    }
     Env.call(stub, { debug: false, ...options })
     return stub.context.SenecaEnv.var
   }
@@ -263,8 +266,10 @@ describe('env validation', () => {
   })
 
   test('errors', () => {
+    // The text of a missing value differs: shape (Seneca 4), then Gubu (Seneca 3).
     expect(() => define({ var: { SENECA_ENV_TEST_S: String } }))
-      .toThrow('Validation failed for property "SENECA_ENV_TEST_S" with value "undefined" because the value is required.')
+      .toThrow(new RegExp('Validation failed for property "SENECA_ENV_TEST_S" ' +
+        '(because the property is missing|with value "undefined" because the value is required)'))
 
     expect(() => define({
       process: { env: { SENECA_ENV_TEST_N: 'abc' } },
@@ -284,6 +289,13 @@ describe('env validation', () => {
       process: { env: { SENECA_ENV_TEST_P: '8080' } },
       var: { SENECA_ENV_TEST_P: 3000 },
     })).toThrow('because the string is not of type number')
+
+    // Builder nodes of the other library (Gubu for shape, shape for Gubu)
+    // are refused: the validator does not read them.
+    const marker = null != Seneca.valid({}).shape ? 'gubu$' : 'shape$'
+    const node = { $: { [marker]: Symbol(marker), v$: '0.0.0' }, t: 'number' }
+    expect(() => define({ var: { SENECA_ENV_TEST_F: node } }))
+      .toThrow(/^@seneca\/env: the var option is built with (Gubu|shape) builders \(at SENECA_ENV_TEST_F\)/)
 
     // An empty var shape accepts anything; a declared shape rejects unknown names.
     expect(define({ file: __dirname + '/base.js', var: {} })).toEqual({ FOO: 'base' })

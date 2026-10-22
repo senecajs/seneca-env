@@ -57,13 +57,14 @@ has no command line flags.
 | Export `env/injectVars`, `$NAME` references, `value$` escape | [API: injectVars](reference/api.md#injectvars) | [Configure a plugin](how-to/configure-a-plugin-from-the-environment.md#4-reference-variables-in-plugin-options) |
 | Shape builder `Numeric(default, base)` | [API: Numeric](reference/api.md#numericdefault-base) | [Handle typed values](how-to/handle-typed-values.md#numbers) |
 | Shape builder `Json(default)` | [API: Json](reference/api.md#jsondefault) | [Handle typed values](how-to/handle-typed-values.md#booleans) |
-| Gubu builders in the `var` function (`Required`, `Skip`, `Exact`, `Default`, ...) | [API: shape builders](reference/api.md#shape-builders) | [Handle typed values](how-to/handle-typed-values.md#required-and-optional) |
+| Validator builders in the `var` function (shape on Seneca 4, Gubu on Seneca 3; `Required`, `Skip`, `Exact`, `Default`, ...) | [API: shape builders](reference/api.md#shape-builders) | [Handle typed values](how-to/handle-typed-values.md#required-and-optional) |
 | Message `sys:env,hook:vars` | [Messages](reference/messages.md) | [Add variables from another source](how-to/add-variables-from-another-source.md) |
 | Error: required variable missing | [Errors](reference/errors.md#validation-errors) | [Handle typed values](how-to/handle-typed-values.md#required-and-optional) |
 | Error: value is not numeric, or not defined (`Numeric`) | [Errors](reference/errors.md#validation-errors) | [Handle typed values](how-to/handle-typed-values.md#numbers) |
 | Error: value is not valid JSON (`Json`) | [Errors](reference/errors.md#validation-errors) | [Handle typed values](how-to/handle-typed-values.md#lists-and-objects) |
 | Error: wrong type for a plain default | [Errors](reference/errors.md#validation-errors) | [Handle typed values](how-to/handle-typed-values.md#numbers) |
 | Error: undeclared name in a file | [Errors](reference/errors.md#validation-errors) | [Configure a plugin](how-to/configure-a-plugin-from-the-environment.md#2-keep-defaults-in-a-committed-file) |
+| Error: `var` object built with the other library's builders (Gubu on Seneca 4, shape on Seneca 3) | [Errors](reference/errors.md#option-errors) | [Handle typed values](how-to/handle-typed-values.md) |
 | Error: file not found or failed to load | [Errors](reference/errors.md#file-errors) | |
 | Error: hook reply is an error or not an object | [Errors](reference/errors.md#hook-errors) | [Add variables from another source](how-to/add-variables-from-another-source.md#3-know-the-rules) |
 | Error: `Environment variable $NAME not loaded` (`injectVars`) | [Errors](reference/errors.md#injectvars-errors) | |

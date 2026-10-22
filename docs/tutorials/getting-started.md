@@ -7,9 +7,9 @@ finished program is in [docs/examples/getting-started](../examples/getting-start
 
 ## 1. Install
 
-The plugin works with Seneca 4 (tested with 4.0.0-rc5 and the 4.0.0
-development build) and with Seneca 3. Node.js 22 or later is
-recommended. In a new directory:
+The plugin works with Seneca 4 (tested with 4.0.0 and 4.0.0-rc5) and
+with Seneca 3.38 or later. Node.js 22 or later is recommended; Seneca
+4.0.0 requires Node.js 24 or later. In a new directory:
 
 ```sh
 npm init -y
@@ -99,7 +99,7 @@ seneca.ready(function () {
 SHOP_NAME=demo SHOP_API_KEY=secret SHOP_UNIT_PRICE=2.5 node shop.js
 ```
 
-The output (produced with seneca 4.0.0-rc5):
+The output (produced with seneca 4.0.0):
 
 ```
 
@@ -132,9 +132,11 @@ price: { shop: 'demo', total: 7.5, currency: 'EUR' }
 
 * The `var` option declared six variables. `String` means a required
   string, a plain string such as `'EUR'` is a default, `Numeric` parses
-  a number and `Json` parses a JSON document. These shapes are
-  [Gubu](https://github.com/rjrodger/gubu) shapes; `Numeric` and `Json`
-  are supplied by the plugin through the function form of `var`.
+  a number and `Json` parses a JSON document. These are shapes of the
+  validator Seneca uses ([shape](https://github.com/rjrodger/shape) on
+  Seneca 4, [Gubu](https://github.com/rjrodger/gubu) on Seneca 3);
+  `Numeric` and `Json` are supplied by the plugin through the function
+  form of `var`, together with the validator's own builders.
 * The files named in `file` were loaded first: `defaults.js` provided
   `SHOP_PORT` and `SHOP_CURRENCY`. `local.js` does not exist, and the
   `;?` suffix told the plugin to ignore that.
@@ -161,12 +163,16 @@ SHOP_API_KEY=secret node shop.js
 ```
 
 The plugin fails to load. Seneca reports a fatal `plugin_define_failed`
-error whose message names the variable:
+error whose message names the variable (produced with seneca 4.0.0):
 
 ```
 seneca: The definition action for the plugin env has failed: Validation failed
-for property "SHOP_NAME" with value "undefined" because the value is required.
+for property "SHOP_NAME" because the property is missing.
 ```
+
+On Seneca 3 and 4.0.0-rc5, which validate with Gubu, the validation
+message is `Validation failed for property "SHOP_NAME" with value
+"undefined" because the value is required.` instead.
 
 Missing or malformed configuration is detected at startup, before any
 message is handled. The instance closes and, in Seneca 3 and Seneca

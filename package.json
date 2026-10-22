@@ -39,9 +39,6 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
-    "gubu": "^9.0.0"
-  },
   "devDependencies": {
     "@seneca/maintain": "^0.1.0",
     "@types/jest": "^29.5.14",
@@ -54,6 +51,6 @@
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "seneca": ">=3||>=4.0.0-rc2"
+    "seneca": ">=3.38||>=4.0.0-rc5"
   }
 }

@@ -13,18 +13,19 @@ declare function env(this: any, options: EnvOptions): {
     };
 };
 declare namespace env {
-    var defaults: {
-        var: import("gubu").Node<unknown>;
-        file: import("gubu").Node<unknown>;
-        process: import("gubu").Node<{
-            env: import("gubu").Node<{}>;
-        }>;
+    var defaults: ({ valid }: {
+        valid: any;
+    }) => {
+        var: any;
+        file: any;
+        process: any;
         debug: boolean;
     };
 }
 declare const Intern: {
     isMissingModule: (err: any, modulePath: string) => boolean;
-    customShapeBuilders: Record<string, any>;
+    findForeignNode: (spec: any, marker: string, path?: string, seen?: Set<any>) => string | null;
+    makeCustomShapeBuilders: (valid: any) => Record<string, any>;
 };
 export { Intern };
 export default env;

@@ -1,17 +1,33 @@
 # Changes
 
-## 0.6.0 2026-10-07
+## 0.6.0 2026-10-21
 
 * An optional configuration file (path ending in `;?`) is ignored only when
   the file itself is missing. A module that the file requires but that
   cannot be found used to be swallowed as well (same `MODULE_NOT_FOUND`
   code); it now fails the load, as the documentation says.
-* Seneca 4 prerelease support: the tests run against `seneca@4.0.0-rc5`
-  (now a development dependency, `^4.0.0-rc5`) and against the 4.0.0
-  development build. The peer dependency range `>=3||>=4.0.0-rc2` is
-  unchanged, so Seneca 3 (with seneca-promisify) is still supported.
-* `gubu` is declared as a dependency of the plugin; it was previously
-  available only through Seneca's own dependency on it.
+* Seneca 4 support. Seneca 4.0.0 validates with
+  [shape](https://github.com/rjrodger/shape), the renamed successor of
+  Gubu, and rejects option defaults built with Gubu, so 0.5 stops the
+  process at startup there (`plugin_gubu_shape`). `defaults` is now a
+  function of `{ valid }`, the builders Seneca passes to it: shape on
+  Seneca 4, Gubu on Seneca 3. The options are unchanged.
+* The variable shape (`var`) is built with the validator of the Seneca
+  instance (`seneca.valid`): shape on Seneca 4, Gubu on Seneca 3. A
+  `var` function receives that validator's builders, plus `Numeric` and
+  `Json`, which are made from it. A failed validation throws a
+  `ShapeError` on Seneca 4 and a `GubuError` on Seneca 3; for a missing
+  required variable shape's text is `because the property is missing`.
+* A `var` object that holds builder nodes of the other library, such as
+  builders imported from the gubu package on Seneca 4, is refused with
+  an error that names the variable (fatal, as `plugin_define_failed`).
+  It failed with unrelated validation errors.
+* The gubu dependency is removed; the plugin has no dependencies. It
+  was previously available only through Seneca's own dependency on it.
+* Breaking: Seneca 3 support starts at 3.38. The peer range is
+  `>=3.38||>=4.0.0-rc5` (was `>=3||>=4.0.0-rc2`). The tests run against
+  Seneca 4.0.0, 4.0.0-rc5 (the development dependency, `^4.0.0-rc5`) and
+  3.38 (with seneca-promisify).
 * `.npmrc` sets `legacy-peer-deps=true` while published dependencies
   (seneca-msg-test) exclude the Seneca 4 prerelease from their peer
   range. Remove it once Seneca 4.0.0 is published.
