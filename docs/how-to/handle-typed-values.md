@@ -7,10 +7,9 @@ required or optional.
 Use the function form of the `var` option. The function receives the
 plugin's own shape builders (`Numeric`, `Json`) together with every
 builder of the validator Seneca uses,
-[shape](https://github.com/rjrodger/shape) on Seneca 4 and
-[Gubu](https://github.com/rjrodger/gubu) on Seneca 3 (`Required`,
-`Skip`, `Exact`, `Default` and the others used here exist in both), so
-the builders always match the validator:
+[shape](https://github.com/rjrodger/shape) (`Required`, `Skip`,
+`Exact`, `Default` and the others), so the builders always match the
+validator:
 
 ```js
 .use('@seneca/env', {
@@ -75,7 +74,7 @@ A value outside the list fails with
 
 | Declaration | Missing variable |
 | ----------- | ---------------- |
-| `String`, `Required(String)` | Fails: `because the property is missing` on Seneca 4.0.0, `because the value is required` on Seneca 3 and 4.0.0-rc5. |
+| `String`, `Required(String)` | Fails: `because the property is missing`. |
 | `'EUR'` (a default) | The default is used. |
 | `Skip(String)` | The name is left out of `var`. |
 | `Numeric('int')`, `Json()` (no default) | The name is left out of `var`. |

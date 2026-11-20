@@ -7,17 +7,16 @@ finished program is in [docs/examples/getting-started](../examples/getting-start
 
 ## 1. Install
 
-The plugin works with Seneca 4 (tested with 4.0.0 and 4.0.0-rc5) and
-with Seneca 3.38 or later. Node.js 22 or later is recommended; Seneca
-4.0.0 requires Node.js 24 or later. In a new directory:
+The plugin works with Seneca 4 and needs Node.js 24 or later. In a new
+directory:
 
 ```sh
 npm init -y
-npm install seneca @seneca/env
+npm install seneca@^4 @seneca/env
 ```
 
-On Seneca 3 also install `seneca-promisify` and load it before the
-plugin; see [Seneca 3 and Seneca 4](../explanation/design.md#seneca-3-and-seneca-4).
+Seneca 3 users stay on `@seneca/env@0.5`; see
+[Seneca 4 and earlier versions](../explanation/design.md#seneca-4-and-earlier-versions).
 
 ## 2. Write a defaults file
 
@@ -133,8 +132,7 @@ price: { shop: 'demo', total: 7.5, currency: 'EUR' }
 * The `var` option declared six variables. `String` means a required
   string, a plain string such as `'EUR'` is a default, `Numeric` parses
   a number and `Json` parses a JSON document. These are shapes of the
-  validator Seneca uses ([shape](https://github.com/rjrodger/shape) on
-  Seneca 4, [Gubu](https://github.com/rjrodger/gubu) on Seneca 3);
+  validator Seneca uses ([shape](https://github.com/rjrodger/shape));
   `Numeric` and `Json` are supplied by the plugin through the function
   form of `var`, together with the validator's own builders.
 * The files named in `file` were loaded first: `defaults.js` provided
@@ -170,13 +168,9 @@ seneca: The definition action for the plugin env has failed: Validation failed
 for property "SHOP_NAME" because the property is missing.
 ```
 
-On Seneca 3 and 4.0.0-rc5, which validate with Gubu, the validation
-message is `Validation failed for property "SHOP_NAME" with value
-"undefined" because the value is required.` instead.
-
 Missing or malformed configuration is detected at startup, before any
-message is handled. The instance closes and, in Seneca 3 and Seneca
-4.0.0, the process exits; see [Errors](../reference/errors.md).
+message is handled. The instance closes and the process exits; see
+[Errors](../reference/errors.md).
 
 ## 7. Add a local override file
 
@@ -206,4 +200,4 @@ stay in place.
   describe every option, the context entry, the export and the shape
   builders.
 * [How the plugin works](../explanation/design.md) explains the design
-  and the differences between Seneca 3 and Seneca 4.
+  and what changed with Seneca 4.

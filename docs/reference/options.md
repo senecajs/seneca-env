@@ -16,9 +16,8 @@ for the ways to pass them.
 ## `var`
 
 A shape describing the variables, built with the validator of the
-Seneca instance (`seneca.valid`): [shape](https://github.com/rjrodger/shape)
-on Seneca 4.0.0, [Gubu](https://github.com/rjrodger/gubu) 9 on Seneca
-3.38 and 4.0.0-rc5. Each key is a variable name; each value is a type,
+Seneca instance (`seneca.valid`): [shape](https://github.com/rjrodger/shape).
+Each key is a variable name; each value is a type,
 a default value or a shape builder:
 
 | Value | Meaning |
@@ -26,16 +25,15 @@ a default value or a shape builder:
 | `String` | Required string. |
 | `'text'` | Optional string with this default. |
 | `Numeric(...)`, `Json(...)` | Converted values; see [Shape builders](api.md#shape-builders). |
-| `Required(shape)`, `Skip(shape)`, `Exact(...)`, `Default(...)` and the other builders of the validator | As in shape or Gubu; these four exist in both. |
+| `Required(shape)`, `Skip(shape)`, `Exact(...)`, `Default(...)` and the other builders of the validator | As in shape. |
 
 A key with a `$` prefix (`$API_KEY: String`) declares the variable
 without the prefix (`API_KEY`) and hides its value from the `debug`
 output. Nothing else changes for hidden variables.
 
 The function form receives one argument, an object with every builder
-of the validator Seneca uses (shape's on Seneca 4.0.0, Gubu's on Seneca
-3.38 and 4.0.0-rc5) plus the plugin's own `Numeric` and `Json`, and
-returns the shape:
+of the validator Seneca uses (shape) plus the plugin's own `Numeric`
+and `Json`, and returns the shape:
 
 ```js
 var: ({ Numeric, Json, Required }) => ({
@@ -49,15 +47,12 @@ The function form is the recommended form: its builders always match
 the validator Seneca uses.
 
 With the object form, builder nodes must come from the validator the
-Seneca instance uses: on Seneca 4.0.0 shape builders (`Seneca.valid` or
-`seneca.valid`, or the `shape` package), on Seneca 3.38 and 4.0.0-rc5
-Gubu builders (`Seneca.valid` or the `gubu` package). The validator
-does not read builder nodes of the other library, so a `var` object
-that contains them (for example `{ PORT: Default(8080) }` with `Default`
-imported from the `gubu` package, on Seneca 4.0.0) is refused when the
-plugin loads; see [Option errors](errors.md#option-errors). On Seneca
-4.0.0 `Seneca.util.Gubu` is a deprecated alias of shape
-(`SENECA_DEP_UTIL_GUBU`); use `Seneca.valid`.
+Seneca instance uses: `Seneca.valid` or `seneca.valid`. Shape does not
+read builder nodes of the `gubu` package, so a `var` object that
+contains them (for example `{ PORT: Default(8080) }` with `Default`
+imported from the `gubu` package) is refused when the plugin loads; see
+[Option errors](errors.md#option-errors). `Seneca.util.Gubu` is a
+deprecated alias of shape (`SENECA_DEP_UTIL_GUBU`); use `Seneca.valid`.
 
 Only declared names are read from the environment. Names present in a
 file but not declared fail validation (`the property "NAME" is not
@@ -136,7 +131,6 @@ values are in place before the next plugin loads and before
 
 As for every Seneca plugin, the options are built from, in increasing
 precedence: the `defaults` above, `options.plugin.env` in the Seneca
-instance options, and the second argument of `seneca.use(...)`. On
-Seneca 4 a top level `options.env` block is not merged (Seneca 3 merged
-it only with `legacy.top_plugins`). The resolved options are available
+instance options, and the second argument of `seneca.use(...)`. A top
+level `options.env` block is not merged. The resolved options are available
 as `seneca.options().plugin.env`.

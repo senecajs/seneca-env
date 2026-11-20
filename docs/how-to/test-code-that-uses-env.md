@@ -117,16 +117,16 @@ test('missing variable', () => {
 
 The stub needs `valid`, because the plugin builds the `var` shape with
 the validator of the instance (`seneca.valid`); without it the call
-fails with `TypeError: Valid is not a function`. The expected message
-is the Seneca 4.0.0 (shape) one; on Seneca 3 and 4.0.0-rc5 (Gubu) it
-is `Validation failed for property "SHOP_TEST_NAME" with value
-"undefined" because the value is required.` The messages are listed in
-[Errors](../reference/errors.md).
+fails with `TypeError: Valid is not a function`. The messages are
+listed in [Errors](../reference/errors.md).
 
-## Seneca 3
+## Tests written for Seneca 3
 
-On Seneca 3 (3.38 or later) load `seneca-promisify` before the plugin
+Tests written for Seneca 3 loaded `seneca-promisify` before the plugin
 (`Seneca().test().use('promisify').use(Env)`), because the plugin uses
-`seneca.prepare` and `seneca.post`. On Seneca 4 the same line still
-works, as seneca-promisify is a no-op there, but Seneca 4.0.0 logs a
-deprecation warning for it (`SENECA_DEP_PROMISIFY`).
+`seneca.prepare` and `seneca.post`. Seneca 4 has both built in, and
+loading `seneca-promisify` there logs the deprecation warning
+`SENECA_DEP_PROMISIFY`, so remove `.use('promisify')` and the
+`seneca-promisify` dependency. A missing value reads `because the
+property is missing` on Seneca 4, where Seneca 3 said `with value
+"undefined" because the value is required`.

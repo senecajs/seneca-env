@@ -24,6 +24,3 @@ seneca.post('sys:env,hook:vars', { default$: {} })
 
 Handler examples, in callback and async form, are in
 [Add variables from another source](../how-to/add-variables-from-another-source.md).
-
-On Seneca 3 the `sys:` prefix needs no special treatment: Seneca 3
-translates only `sys:seneca` patterns to `role:seneca`.

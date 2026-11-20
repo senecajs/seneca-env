@@ -1,7 +1,7 @@
 # How the plugin works
 
 This page explains what `@seneca/env` does when it loads, why it is
-built the way it is, and how Seneca 3 and Seneca 4 differ for it. The
+built the way it is, and what it relies on in Seneca 4. The
 specification is in the [reference](../README.md#reference).
 
 ## The problem
@@ -17,10 +17,9 @@ and its default, checked once at startup.
 ## One declaration, available everywhere
 
 The `var` option is a shape, built with the validator of the Seneca
-instance, `seneca.valid`: [shape](https://github.com/rjrodger/shape) on
-Seneca 4.0.0, and its predecessor [Gubu](https://github.com/rjrodger/gubu)
-9 on Seneca 3.38 and 4.0.0-rc5. That is the validation library Seneca
-itself uses for options and messages, so declaring variables feels the
+instance, `seneca.valid`: [shape](https://github.com/rjrodger/shape),
+the successor of [Gubu](https://github.com/rjrodger/gubu). That is the
+validation library Seneca itself uses for options and messages, so declaring variables feels the
 same as declaring plugin options, and the error messages have the same
 form (they name the property and the reason).
 
@@ -42,7 +41,7 @@ When Seneca runs the plugin's definition function:
 1. The `var` shape is built with `seneca.valid`; a `var` function is
    first called with that validator's builders plus `Numeric` and
    `Json`. Keys with a `$` prefix are renamed without it and recorded
-   as hidden. Builder nodes of the other library are refused here.
+   as hidden. Builder nodes of the `gubu` package are refused here.
 2. The files named in `file` are loaded with `require`, in order, each
    one's values overriding the previous ones. A `;?` suffix makes a
    missing file acceptable.
@@ -73,7 +72,7 @@ takes only the declared names and ignores the rest. A defaults file,
 on the other hand, is written for this service, so a name that is not
 declared is most likely a typo or a leftover, and the closed shape
 reports it (`the property "NAME" is not allowed`). The one exception is
-an empty `var`: shape and Gubu treat `{}` as "any object", so with no
+an empty `var`: shape treats `{}` as "any object", so with no
 declarations the file contents pass through unchanged.
 
 ## Types
@@ -85,15 +84,14 @@ or `parseFloat` from the default value you give (an integer such as
 `'float'` select the parser without a default), and `Json`, which runs
 `JSON.parse` and therefore also covers booleans, arrays and nested
 objects. They are made from the validator of the instance, with its
-`buildize` and `makeErr`, which shape and Gubu both provide, so they are
-ordinary builders of that validator and combine with its own
+`buildize` and `makeErr`, so they are ordinary builders of that validator and combine with its own
 (`Numeric('int').Required()`). They are handed to the function form of
 `var` together with the validator's builders, so your code needs no
 validation library of its own and always gets builders that match the
 validator Seneca uses.
 
-A `Numeric` or `Json` variable without a default is optional: neither
-shape nor Gubu reports validator errors for an absent optional value,
+A `Numeric` or `Json` variable without a default is optional: shape
+reports no validator errors for an absent optional value,
 so the name is simply left out of `var`. Wrap it in `Required` when
 the service cannot start without it.
 
@@ -116,36 +114,33 @@ throw, because a reference that resolves to `undefined` would be a
 silent misconfiguration. The function changes the object it is given
 in place and returns it.
 
-## Seneca 3 and Seneca 4
+## Seneca 4 and earlier versions
 
-The plugin runs on both major versions with the same code. The
-differences that matter:
+Version 0.6 supports Seneca 4 only: the peer dependency is `seneca`
+`^4.0.0`, and like Seneca 4 it needs Node.js 24 or later. Seneca 3
+users stay on `@seneca/env@0.5`. What the plugin relies on in Seneca 4:
 
-| Topic | Seneca 3 (3.38 tested) | Seneca 4 (4.0.0 and 4.0.0-rc5 tested) |
-| ----- | ---------------------- | ------------------------------------- |
-| `seneca.prepare` and `seneca.post`, which the plugin uses for the hook | Provided by `seneca-promisify`, which must be loaded before the plugin. | Built in; `seneca-promisify` is a no-op if loaded (4.0.0 logs a deprecation warning for it, `SENECA_DEP_PROMISIFY`). |
-| Plugin options | From `seneca.use(...)` and `options.plugin.env`. A top level `options.env` block is merged only with `legacy.top_plugins: true`. | From `seneca.use(...)` and `options.plugin.env` only. |
-| Failed definition or initialization | Fatal: the instance closes and the process exits. | Fatal. 4.0.0 exits the process; 4.0.0-rc5 only logs the exit (its default `system.exit` does not call `process.exit`). |
-| The `sys:` prefix of the hook message | Fine: Seneca 3 translates only `sys:seneca` to `role:seneca`. | Native. |
-| Validator (`seneca.valid`), for the plugin options and the `var` shape | Gubu 9.0.0 | shape 11 on 4.0.0; Gubu 9 on 4.0.0-rc5 |
-| Validation errors | `GubuError`; a missing value reads `with value "undefined" because the value is required.` | `ShapeError` on 4.0.0; a missing value reads `because the property is missing.` 4.0.0-rc5 is as Seneca 3. |
-| Node.js | Seneca 3.38 declares `node >=10`, so the plugin's own `node >=18` applies. | 4.0.0 requires Node.js 24 or later (`engines.node >=24`); 4.0.0-rc5 declares `node >=14`. |
-
-Nothing in the plugin depends on a Seneca 3 only feature. The peer
-dependency range `>=3.38||>=4.0.0-rc5` starts at the versions tested.
+| Topic | Seneca 4 |
+| ----- | -------- |
+| `seneca.prepare` and `seneca.post`, which the plugin uses for the hook | Built in. `seneca-promisify` is not needed; loading it logs the deprecation warning `SENECA_DEP_PROMISIFY`. |
+| Plugin options | From `seneca.use(...)` and `options.plugin.env` only. |
+| Failed definition or initialization | Fatal: the instance closes and the process exits. |
+| The `sys:` prefix of the hook message | Native. |
+| Validator (`seneca.valid`), for the plugin options and the `var` shape | shape 11. |
+| Validation errors | `ShapeError`; a missing value reads `because the property is missing.` |
 
 Since version 0.6.0 the plugin has no validator of its own and no
-runtime dependencies. Seneca 4.0.0 validates with shape and rejects
+runtime dependencies. Seneca 4 validates with shape and rejects
 plugin option defaults built with Gubu (fatal `plugin_gubu_shape`):
 0.5.0 built its defaults with the `gubu` package, so it stops the
-process at startup on Seneca 4.0.0. Builder nodes of one library are
-also not read by the other. So `env.defaults` is a function that builds
+process at startup on Seneca 4. Builder nodes of the `gubu` package
+are also not read by shape. So `env.defaults` is a function that builds
 the options shape with the builders Seneca passes in, the `var` shape
 is built with `seneca.valid`, and a `var` function receives that
 validator's builders, with `Numeric` and `Json` made from it. A `var`
-object written with the other library's builders, such as `Default`
-from the `gubu` package on Seneca 4.0.0, is refused when the plugin
-loads, with a message that names the variable.
+object written with builders from the `gubu` package, such as its
+`Default`, is refused when the plugin loads, with a message that names
+the variable.
 
 ## Limits
 
