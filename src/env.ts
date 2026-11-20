@@ -17,8 +17,7 @@ type ContextEnv = {
 function env(this: any, options: EnvOptions) {
   let seneca: any = this
 
-  // The validator of the Seneca instance: shape on Seneca 4, Gubu on
-  // Seneca 3.
+  // The validator of the Seneca instance: shape.
   const Valid = seneca.valid
 
   let varMap: KV = {}
@@ -61,15 +60,13 @@ function env(this: any, options: EnvOptions) {
         return a
       }, {})
 
-    // Builder nodes of the other library (Gubu nodes for shape, shape nodes
-    // for Gubu) are not read by the validator, so they are refused.
-    const isShapeLib = null != Valid({}).shape
-    const at = Intern.findForeignNode(varSpec, isShapeLib ? 'gubu$' : 'shape$')
+    // Builder nodes of the gubu package are not read by shape, so they
+    // are refused.
+    const at = Intern.findForeignNode(varSpec, 'gubu$')
     if (null != at) {
       throw new Error(
-        `@seneca/env: the var option is built with ` +
-        `${isShapeLib ? 'Gubu' : 'shape'} builders (at ${at}), but this ` +
-        `Seneca validates with ${isShapeLib ? 'shape' : 'Gubu'}, which does ` +
+        `@seneca/env: the var option is built with Gubu builders ` +
+        `(at ${at}), but this Seneca validates with shape, which does ` +
         `not read them. Use the builders passed to a var function, or ` +
         `seneca.valid.`)
     }
@@ -179,8 +176,8 @@ function env(this: any, options: EnvOptions) {
 }
 
 
-// Default options, built with the builders Seneca passes in `valid`:
-// shape on Seneca 4, Gubu on Seneca 3. Seneca 4 rejects Gubu shapes.
+// Default options, built with the shape builders Seneca passes in
+// `valid`. Seneca 4 rejects Gubu shapes.
 env.defaults = ({ valid }: { valid: any }) => ({
 
   // Specify needed environment variables
@@ -243,8 +240,8 @@ const Intern: {
     return null
   },
 
-  // The builders are made from the validator they are used with (shape or
-  // Gubu), as builder nodes of one are not read by the other.
+  // The builders are made from the validator of the Seneca instance
+  // (shape), as builder nodes of another library are not read by it.
   makeCustomShapeBuilders: (valid: any) => ({
 
     // TODO: could be moved to shape as a standard shape builder

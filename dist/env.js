@@ -5,8 +5,7 @@ exports.Intern = void 0;
 function env(options) {
     var _a;
     let seneca = this;
-    // The validator of the Seneca instance: shape on Seneca 4, Gubu on
-    // Seneca 3.
+    // The validator of the Seneca instance: shape.
     const Valid = seneca.valid;
     let varMap = {};
     let hideMap = {};
@@ -35,14 +34,12 @@ function env(options) {
             a[n] = varSpec[k];
             return a;
         }, {});
-        // Builder nodes of the other library (Gubu nodes for shape, shape nodes
-        // for Gubu) are not read by the validator, so they are refused.
-        const isShapeLib = null != Valid({}).shape;
-        const at = Intern.findForeignNode(varSpec, isShapeLib ? 'gubu$' : 'shape$');
+        // Builder nodes of the gubu package are not read by shape, so they
+        // are refused.
+        const at = Intern.findForeignNode(varSpec, 'gubu$');
         if (null != at) {
-            throw new Error(`@seneca/env: the var option is built with ` +
-                `${isShapeLib ? 'Gubu' : 'shape'} builders (at ${at}), but this ` +
-                `Seneca validates with ${isShapeLib ? 'shape' : 'Gubu'}, which does ` +
+            throw new Error(`@seneca/env: the var option is built with Gubu builders ` +
+                `(at ${at}), but this Seneca validates with shape, which does ` +
                 `not read them. Use the builders passed to a var function, or ` +
                 `seneca.valid.`);
         }
@@ -130,8 +127,8 @@ function env(options) {
         }
     };
 }
-// Default options, built with the builders Seneca passes in `valid`:
-// shape on Seneca 4, Gubu on Seneca 3. Seneca 4 rejects Gubu shapes.
+// Default options, built with the shape builders Seneca passes in
+// `valid`. Seneca 4 rejects Gubu shapes.
 env.defaults = ({ valid }) => ({
     // Specify needed environment variables
     var: valid.One({}, Function),
@@ -173,8 +170,8 @@ const Intern = {
         }
         return null;
     },
-    // The builders are made from the validator they are used with (shape or
-    // Gubu), as builder nodes of one are not read by the other.
+    // The builders are made from the validator of the Seneca instance
+    // (shape), as builder nodes of another library are not read by it.
     makeCustomShapeBuilders: (valid) => ({
         // TODO: could be moved to shape as a standard shape builder
         Numeric: function (dval, base = 10) {
