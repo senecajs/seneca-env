@@ -53,7 +53,7 @@ seneca.ready(function () {
 })
 ```
 
-Output (seneca 4.0.0-rc5):
+Output (seneca 4.0.0):
 
 ```
 {

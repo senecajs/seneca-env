@@ -6,8 +6,10 @@ required or optional.
 
 Use the function form of the `var` option. The function receives the
 plugin's own shape builders (`Numeric`, `Json`) together with every
-[Gubu](https://github.com/rjrodger/gubu) builder (`Required`, `Skip`,
-`Exact`, `Default` and the others):
+builder of the validator Seneca uses,
+[shape](https://github.com/rjrodger/shape) (`Required`, `Skip`,
+`Exact`, `Default` and the others), so the builders always match the
+validator:
 
 ```js
 .use('@seneca/env', {
@@ -34,8 +36,8 @@ that does not parse fails the load with
 `Value "abc" for property "SHOP_PORT" is not numeric (base 10).`
 
 Do not write a plain number as the default (`SHOP_PORT: 3000`): the
-value from the environment is a string, and Gubu rejects it with
-`the string is not of type number`.
+value from the environment is a string, and the validator rejects it
+with `the string is not of type number`.
 
 ## Booleans
 
@@ -72,7 +74,7 @@ A value outside the list fails with
 
 | Declaration | Missing variable |
 | ----------- | ---------------- |
-| `String`, `Required(String)` | Fails: `the value is required`. |
+| `String`, `Required(String)` | Fails: `because the property is missing`. |
 | `'EUR'` (a default) | The default is used. |
 | `Skip(String)` | The name is left out of `var`. |
 | `Numeric('int')`, `Json()` (no default) | The name is left out of `var`. |

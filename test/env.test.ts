@@ -6,16 +6,15 @@ const SenecaMsgTest = require('seneca-msg-test')
 const BasicMessages = require('./basic.messages').default
 
 
-// seneca-promisify provides prepare and post on Seneca 3; on Seneca 4 it is a no-op.
 function make() {
-  return Seneca({ legacy: false }).test().use('promisify')
+  return Seneca({ legacy: false }).test()
 }
 
 
 describe('env', () => {
 
   test('happy', async () => {
-    const seneca = Seneca({ legacy: false }).test().use('promisify').use(Env)
+    const seneca = Seneca({ legacy: false }).test().use(Env)
     await seneca.ready()
     expect(seneca.context.SenecaEnv).toEqual({ var: {} })
     expect(seneca.root.context.SenecaEnv).toBe(seneca.context.SenecaEnv)
@@ -25,7 +24,7 @@ describe('env', () => {
   })
 
   test('messages', async () => {
-    const seneca = Seneca({ legacy: false }).test().use('promisify').use(Env)
+    const seneca = Seneca({ legacy: false }).test().use(Env)
     await (SenecaMsgTest(seneca, BasicMessages)())
     await seneca.close()
   })
@@ -212,7 +211,7 @@ describe('env', () => {
     const seneca = Seneca({
       legacy: false,
       plugin: { env: { var: { SENECA_ENV_TEST_X: 'from-options' } } },
-    }).test().use('promisify').use(Env)
+    }).test().use(Env)
     await seneca.ready()
     expect(seneca.context.SenecaEnv.var).toEqual({ SENECA_ENV_TEST_X: 'from-options' })
     await seneca.close()
@@ -225,8 +224,11 @@ describe('env validation', () => {
 
   // A failing plugin definition is a fatal error in Seneca, which closes the
   // instance, so the definition function is called directly on a stub here.
+  // The stub provides Seneca's validator, as an instance does.
   function define(options: any) {
-    const stub: any = { root: { context: {} }, context: {}, prepare() { } }
+    const stub: any = {
+      root: { context: {} }, context: {}, prepare() { }, valid: Seneca.valid,
+    }
     Env.call(stub, { debug: false, ...options })
     return stub.context.SenecaEnv.var
   }
@@ -264,7 +266,7 @@ describe('env validation', () => {
 
   test('errors', () => {
     expect(() => define({ var: { SENECA_ENV_TEST_S: String } }))
-      .toThrow('Validation failed for property "SENECA_ENV_TEST_S" with value "undefined" because the value is required.')
+      .toThrow('Validation failed for property "SENECA_ENV_TEST_S" because the property is missing')
 
     expect(() => define({
       process: { env: { SENECA_ENV_TEST_N: 'abc' } },
@@ -284,6 +286,11 @@ describe('env validation', () => {
       process: { env: { SENECA_ENV_TEST_P: '8080' } },
       var: { SENECA_ENV_TEST_P: 3000 },
     })).toThrow('because the string is not of type number')
+
+    // Builder nodes of the gubu package are refused: shape does not read them.
+    const node = { $: { gubu$: Symbol('gubu$'), v$: '9.0.0' }, t: 'number' }
+    expect(() => define({ var: { SENECA_ENV_TEST_F: node } }))
+      .toThrow(/^@seneca\/env: the var option is built with Gubu builders \(at SENECA_ENV_TEST_F\)/)
 
     // An empty var shape accepts anything; a declared shape rejects unknown names.
     expect(define({ file: __dirname + '/base.js', var: {} })).toEqual({ FOO: 'base' })

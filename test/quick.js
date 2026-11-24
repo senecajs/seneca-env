@@ -30,7 +30,6 @@ const SpecialVarsPluginTwo = function() {
 
 const seneca = Seneca({legacy:false})
       .test()
-      .use('promisify')
       .use(SpecialVarsPluginOne)
       .use(SpecialVarsPluginTwo)
       .use('..', {
